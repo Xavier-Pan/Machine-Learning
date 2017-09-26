@@ -23,3 +23,10 @@ NOTE:
 Use whatever programming language you prefer.
 You should use as few functions from any library as possible. 
 Time complexity is not what we care for now, but if you like to improve it in that regard, it is always good for you.
+
+if you use windows and install anaconda,then open Anaconda prompt,and key in the command:
+    python ML-HW1-0556642.py tra_data2.txt 3 .01
+
+tra_data2.txt:traning data(you need first call the function "makeTrainingData(n)" to make the training data file.)
+3:degree of order for polynomial
+.01:lambda
