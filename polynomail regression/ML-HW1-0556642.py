@@ -2,71 +2,46 @@
 """
 Created on Tue Sep 19 23:23:37 2017
 
-@author: 順益
+@author: sy
 """
 import numpy as np
+import sys
+import matplotlib.pyplot as plt
+import time
 
-def findNonZeroRowIndex(A,i):
-    return -1
 
-def swap(B):
-    C = B
-    t = np.copy(C[0,:] )
-    C[0,:] = C[1,:] 
-    C[1,:] = t
-    return C
-
-#swap colum i and colum k
-def swapCol(B,i,k):
-    iCol = np.copy(B[:,i])
-    B[:,i] = B[:,k]
-    B[:,k] = iCol
-        
-
-#!!!!!(not complete)==== calculus LUP  which mean PA equal to LU ===================== 
-def LUPDecom(A):#PA = LU for case that A did't have LU decomposition
-    U = np.copy(A)
-    m = A.shape[0] #number of row
-    L = np.eye(m) #initial L
-    P = np.eye(m) #initial P
-    order = np.arange(m)# record order
-    for i in range(m-1):
-        if U[i,i] == 0:
-            k = findNonZeroRowIndex(U,i) #find non-zero pivot from row i.it return -1 if failure
-            if k >= 0:# find some index
-                swap(U,i,k)
-                swapCol(L,i,k) # equal to multiply a elementary matrix in right side
-            else:
-                continue #skip this 
-       # U[i,:] /= U[i,i] # to make the pivot to be 1
-        for j in range(i+1,m):
-            factor = (U[j,i]/U[i,i])
-            U[j,:] = U[j,:] - factor*U[i,:] # replace row i to j
-            L[:,i] = L[:,i] + factor*L[:,j] # replace col j to i
-        #print("[{}] U:{} ".format(i,U))
-        #print("L:{} ".format(L))
-    return L,U
+def makeTrainingData(n):        
+    x = np.linspace(-5,10,n)# normalize to range -5~+5 
+    #y = np.sin(x/n*(4*np.pi)) + np.random.normal(scale = 0.1,size = n)#add gaussian noise
+    y = np.power(x,5)+ (-10)*np.power(x,4) + (10)*np.power(x,3) + (-4)*np.power(x,2)+ x + 15 + np.random.normal(scale = 0.1,size = n)#add gaussian noise
+    with open('.\\tra_data2.txt','w') as f:
+        for i in range(len(x)):
+            f.write(str(x[i])+','+str(y[i]))
+            f.write('\n')
+#makeTrainingData(50)
+#x,y = readData('tra_data2.txt')
+#plt.plot(x,y)
+def readData(path):
+    x=[]
+    y=[]
+    data = []
+    with open(path,'r') as f:            
+            data = f.readlines()            
+    for item in data:
+        x.append(float(item.split(',')[0]))
+        y.append(float(item.split(',')[1]))                
+    return x,y
 
 #==== calculus LU decomposition ===================== 
 def LUDecom(A):
     U = np.copy(A)
     m = A.shape[0] #number of row
-    L = np.eye(m) #initial L
-    for i in range(m-1):
-        if U[i,i] == 0:
-            k = findNonZeroRowIndex(U,i) #find non-zero pivot from row i.it return -1 if failure
-            if k >= 0:# find some index
-                swap(U,i,k)
-                swapCol(L,i,k) # equal to multiply a elementary matrix in right side
-            else:
-                continue #skip this 
-       # U[i,:] /= U[i,i] # to make the pivot to be 1
+    L = np.eye(m) #initial L   
+    for i in range(m-1):             
         for j in range(i+1,m):
-            factor = (U[j,i]/U[i,i])
+            factor = (U[j,i]/U[i,i])            
             U[j,:] = U[j,:] - factor*U[i,:] # replace row i to j
-            L[:,i] = L[:,i] + factor*L[:,j] # replace col j to i
-        #print("[{}] U:{} ".format(i,U))
-        #print("L:{} ".format(L))
+            L[:,i] = L[:,i] + factor*L[:,j] # replace col j to i            
     return L,U
 
 #==== calculus inverse for L ===================== 
@@ -83,60 +58,136 @@ def invL(L_):
         LInver[i,:] /= L[i,i] # sacle row i
     return LInver
 
+#==== calculus inverse for L ===================== 
+def invByLU(A):    
+    L,U = LUDecom(A)   
+    return  matMul(transpose(invL(transpose(U))),invL(L))
+
 #==== do matrix transpose =====================
 def transpose(A):    
-    n = A.shape[0]
-    transA = np.eye(n)
+    m = A.shape[0]
+    n = A.shape[1]
+    transA = np.zeros([n,m])
     for i in range(n):
-        for j in range(n):
+        for j in range(m):
             transA[i,j] = A[j,i]
+    return transA
 
+#==== do matrix multiply =====================
+def matMul(A,B):    
+    if A.shape[1] != B.shape[0]:
+        print("matMul(A,B):the matrix dimension did not match!")
+        return -1
+        
+    m = A.shape[0]
+    l = A.shape[1]
+    n = B.shape[1]
+    C = np.zeros([m,n])    
+    for i in range(m):
+        for j in range(n):
+            for k in range(l):
+                C[i,j] += A[i,k]*B[k,j]
+    return C
+#aaa = matMul(transpose(np.array([[1,2,3]])),np.array([[1,2,3]]))
 #=== square function ==========================
 def LSE(y,y_hat):    
-    return np.matmul(y-y_hat,y-y_hat)
-#========test  =============================================    
-A = np.array([[3.,-1.,2.],[6.,-1.,5.],[-9.,7.,3.]])
-L,U = LUDecom(A)
-L9 = invL(L)
-U9 = np.transpose(invL(np.transpose(U))) # due to trans(inv(U)) ==  inv(trans(U))
-result = np.matmul(U9,U)#for check result 
-AInver = np.matmul(U9,L9)
+    s = 0.
+    for i in range(len(y)):
+        s +=  (y[i,0]-y_hat[i,0])*(y[i,0]-y_hat[i,0])
+    return s/len(y)
 
-L = np.array([[1,0,0],[2,1,0],[3,4,1]])
+#=== design matrix ==========================
+def makeDisignMat(x,n):
+    m = len(x)
+    A = np.zeros([m,n+1])
+    for j in range(n+1): #j:0,1,...,n
+        A[:,j] = np.power(x,n-j)        
+    return A
 
-np.linalg.inv(np.transpose(U))# inverse
-np.linalg(A)# inverse
-print("L9*L=\n",L9*L)
-print("L:\n",L)
-print("U:\n",U)
+#=== solve Ly = b ==========================
+def equ4L(L,b):
+    y = np.copy(b)    
+    #b = np.mat(b)
+    Lt = np.copy(L)
+    #np.hstack((Lt,b))#concate matrix L and vector b
+    for i in range(Lt.shape[0]-1):
+        for j in range(i+1,Lt.shape[0]):
+            y[j] -= y[i]*Lt[j,i]        
+    return y
 
+#=== solve Ux = y ==========================
+def equ4U(U,y):
+    x = np.copy(y)    
+    #b = np.mat(b)
+    #Ut = np.copy(U)
+    #np.hstack((Lt,b))#concate matrix L and vector b
+    num_row = U.shape[0]
+    for i in range(num_row-1):
+        for j in range(i+1,num_row):
+            k = num_row -1 - j# index k = n-2-i,...,0
+            l = num_row -1 - i# index l = n-1 ,n-2 , ... ,1
+            x[k] -= (U[k,l]/U[l,l])*x[l]
 
-#===read data & initial ===========
-lamda = 0.001
-n =  3
-y = np.random.choice(range(100),size=5, replace=True)
-size_data = y.shape[0]
-x = np.arange(size_data)
-A = np.ones([size_data,n+1])
+    for i in range(num_row):#equal to devide diagnal items to make it be 1
+        x[i] /= U[i,i]        
+    return x
+#AA = np.array([[3,4,5],[0,5,1],[0,0,9]])
+#yy = np.array([1.,2.,3.])
+#a = np.array([equ4U(AA,yy)])
+#matMul(AA,transpose(a))
+#===find inverse by solve Ax=b ===================================
+def invByEqu(A):    
+    n = A.shape[0]
+    iden = np.eye(n)
+    invMat = np.zeros([n,n]) #initial inverse matrix 
+    columList = []
+    L,U = LUDecom(A)
+        #== find inverse ===
+    for i in range(n):
+        t = equ4L(L,iden[i,:])
+        xx = equ4U(U,t)
+        columList.append(xx)
+    
+    for i in range(n):
+        for j in range(n):
+            invMat[i,j] = columList[j][i]
+    return invMat
+#invByEqu(np.eye(3))    
+#=== plot real curve and predict curve ======================
+def plotCurve(x,y,y_hat,err=0):
+    cur1, = plt.plot(x,y_hat)
+    cur2, = plt.plot(x,y)
+    plt.legend(handles = [cur1,cur2],labels = ['predict','real'],loc = 'best')
+    plt.title("Error:"+str(err))
+    plt.show()
+    
+#=== solve inverse by LUx =b =====================================
 
-for j in range(n+1):
-    A[:,j] = np.power(x,n-j)
-    np.power(x,2)
-#np.power([1,2,3,4,5],2)
-#========solve AtA + lambda*I ====================
-Atrans = np.transpose(A)
-AtA = np.matmul(Atrans,A)#transpose(A)*A
-I = np.eye(A.shape[1])#initial
-L,U = LUDecom(AtA + lamda*I)#LU decomposition
-L_inv = invL(L) #inverse L
-U_inv = np.transpose(invL(np.transpose(U))) # inverse U. due to trans(inv(U)) ==  inv(trans(U))
-AtAInver = np.matmul(U_inv,L_inv)#evaluate A inverse
-np.linalg.inv(AtA + lamda*I)# test inverse
-x_hat = np.matmul(np.matmul(AtAInver,Atrans),y)
-predict_y = np.matmul(A,x_hat)#evaluate predict result
-print("error:{}".format(LSE(y,predict_y)))#lease square error
-#printEq(x,n) #print equal
-#=== plot graph ===========================
-import matplotlib.pyplot as plt
-plt.plot(x,y)
-plt.show()
+    #===== initial =========
+path = sys.argv[1]
+n = int(sys.argv[2])
+lamda = float(sys.argv[3])
+x,y = readData(path)
+x = np.array(x)
+y = transpose(np.array([y]))
+    #===== solve linear regression =========
+iden = np.eye(n+1)#identity matrix
+A = makeDisignMat(x,n)
+Atrans = transpose(A)
+AtA = matMul(transpose(A),A)
+invMat = invByEqu(AtA+lamda*iden)    
+#invMat = invByLU(AtA+lamda*iden)
+x_hat = matMul(invMat,matMul(Atrans,y))
+y_hat = matMul(A,x_hat)#predict y
+
+    #==show equaltion===================================
+error = LSE(y,y_hat)
+s =''
+for i,item in enumerate(x_hat):
+    s+='+' + str(item[0]) + '*' + 'x' + str(n-i)
+    s=s[1:]
+print("eqution:",s)
+print("error:",error)
+    #===plot result ==========
+plotCurve(x,y,y_hat,error)
+
