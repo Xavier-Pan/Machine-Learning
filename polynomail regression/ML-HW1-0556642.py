@@ -161,7 +161,7 @@ def plotCurve(x,y,y_hat,err=0):
     plt.title("Error:"+str(err))
     plt.show()
     
-#=== solve inverse by LUx =b =====================================
+#=== solve linear regression =====================================
 
     #===== initial =========
 path = sys.argv[1]
