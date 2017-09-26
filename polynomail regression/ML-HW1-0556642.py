@@ -185,7 +185,7 @@ error = LSE(y,y_hat)
 s =''
 for i,item in enumerate(x_hat):
     s+='+' + str(item[0]) + '*' + 'x' + str(n-i)
-    s=s[1:]
+s=s[1:]
 print("eqution:",s)
 print("error:",error)
     #===plot result ==========
