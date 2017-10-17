@@ -1,0 +1,25 @@
+1. Random Date Generator 
+     a. univariate gaussian data generator 
+          INPUT: expectation value (m), variance (s)
+          OUTPUT: one outcome ~ N(m, s)
+          HINT: https://en.wikipedia.org/wiki/Normal_distribution#Generating_values_from_normal_distribution
+          NOTE: you have to handcraft your geneartor based on one of the approaches given in the hint.
+
+     b. polynomial basis linear model (y = WTPhi(x)+e ; e ~ N(0, a)) data generator
+          INPUT: basis number (n; ex. n=2 -> y = w0x0 +w1x1), a, w
+          OUTPUT: y
+          NOTE: there is an internal constraint: -10.0 < x < 10.0, x is uniformly distributed.
+
+2. Sequential estimate the mean and variance from the data given from the univariate gaussian data generator (1.a).
+        NOTE: you should derive the recursive function of mean and variance based on the sequential esitmation. 
+        INPUT: m, s as in (1.a)
+        FUNCTION: call (1.a) to get a new data point from N(m, s), use sequential estimation to find the current estimates to m and s., repeat until the estimates converge.
+        OUTPUT: print the new data point and the current estimiates of m and s in each iteration.
+        HINT: https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Online_algorithm
+
+3. Baysian Linear regression
+      INPUT: the precision (i.e., b) for initial prior w ~ N(0, b-1I) and all other required inputs for the polynomial basis linear model geneartor (1.b)
+      FUNCTION: call 1.b to generate one data point, and update the prior. and calculate the paramters of predictive distribution, repeat until the posterior probability converges.
+      OUTPUT: print the new data point and the current paramters for posterior and predictive distribution.
+      HINT: It is not that hard.
+Attach file 
