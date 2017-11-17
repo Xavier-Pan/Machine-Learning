@@ -261,14 +261,14 @@ def logistic_regression(n=30,mx1=0, vx1=1, my1=0, vy1=1, mx2=4, vx2=3, my2=4, vy
     do_hessian = False
     sig_Xw = sigmoid(matrix_mul(X,w))    
     
-    D = np.diag((sig_Xw*(1-sig_Xw))[:,0])#diagnal matrix for calculus Hessian        
+    D = diag((sig_Xw*(1-sig_Xw))[:,0])#diagnal matrix for calculus Hessian        
     H = matrix_mul(Xt,matrix_mul(D,X))#hessian matrix    
     #normalize H
     min_element = H.min()
     if min_element == 0:
         min_element = 1
     nomalized_H = H/min_element
-    do_hessian = ( np.linalg.det(nomalized_H) != 0)       
+    do_hessian = ( det(nomalized_H) != 0)       
         
         
     while(abs(cost[-1] - cost[-2]) > .001 and count < maxLoop):    
@@ -278,7 +278,7 @@ def logistic_regression(n=30,mx1=0, vx1=1, my1=0, vy1=1, mx2=4, vx2=3, my2=4, vy
         print("w",w)
         print("sig_Xw.min():",sig_Xw.min())
         grad = matrix_mul(Xt,sig_Xw - transpose(np.array([y])))
-        D = np.diag((sig_Xw*(1-sig_Xw))[:,0])#diagnal matrix for calculus Hessian        
+        D = diag((sig_Xw*(1-sig_Xw))[:,0])#diagnal matrix for calculus Hessian        
         H = matrix_mul(Xt,matrix_mul(D,X))#hessian matrix    
                
         #normalize H for calculus det(H)
@@ -359,7 +359,6 @@ def decode_MNIST_label(file):
     return labels
 
 #===
-
 def confuseMat_EM(y_pre,y,cluster):#confuseMat(sig_Xw,y)
     predic = y_pre[y == cluster]         
     TP = sum(predic == cluster)
@@ -374,6 +373,64 @@ def confuseMat_EM(y_pre,y,cluster):#confuseMat(sig_Xw,y)
     print("sensityvity:",TP/(TP + FN))
     print("specificity:",TN/(TN + FP))
     return TP
+
+#==============
+    
+def confuseMat_EM2(matrix,cluster):#confuseMat(sig_Xw,y)
+    TP = int(matrix[cluster,cluster])
+    TN = 0
+    FP = int(sum(matrix[cluster,:]) - TP)
+    FN = int(sum(matrix[:,cluster]) - TP)
+    for i in range(10):
+        if i != cluster:
+            TN += sum(matrix[i])
+    TN = int(TN - FN)
+  
+    print("\npredict",cluster,"   |  yes  |   no  ")
+    print("-----------------------------")
+    print("  true  yes  |{:7d}|{:7d}".format(TP,FN))
+    print("         no  |{:7d}|{:7d}".format(FP,TN))
+    print("sensityvity:",TP/(TP + FN))
+    print("specificity:",TN/(TN + FP))
+
+
+def argmax(list_):
+    m = 0
+    for i in range(len(list_)):
+        if list_[m] < list_[i] :
+            m = i
+    return m            
+
+def cluster(pre_y,y):
+    print("# of group",end="")
+    for i in range(10):
+        print("|{:5d}".format(i),end="")
+    print("|total  |predict")
+    print("==================================================================================\
+          =====")
+    confusion = np.zeros((10,10))
+    for k in range(10):
+        temp = y[pre_y==k]
+        cluster = [0]*10#
+        for i in range(temp.size):
+            cluster[int(temp[i])] += 1
+        print("{:10d}".format(k),end="")            
+        
+        for j in range(10):
+            print("{:6d}".format(cluster[j]),end="")            
+        print("{:6d} {:6d}".format(sum(cluster),argmax(cluster)),end="")            
+        confusion[argmax(cluster),:] += np.array(cluster)
+        print("")
+  
+    print("==================================================================================\
+          =====")
+    print(" sensity.:",end="")
+    for j in range(10):
+        print("  {:4.2f}".format(confusion[j,j]/sum(confusion[:,j])),end="")            
+   
+    print("")
+    return confusion
+#cluster(y_predict,tra_label)               
 #======================calculus expection ==========================
 def EM_cost(Z,PI,U):
     J = 0
@@ -406,30 +463,24 @@ def resize(images,factor = 2):
     for i in range(new_images.shape[0]):
         for j in range(new_images.shape[1]):
             for k in range(new_images.shape[2]):               
-                    new_images[i,j,k] = images[i,j*2,k*2] 
+                    new_images[i,j,k] = images[i,j*factor,k*factor] 
     return new_images
 
 #==============================================================================
 tra_data = decode_MNIST_image("train-images.idx3-ubyte")#read data
-tra_data = tra_data[:30000]
+tra_data = tra_data[:20000]
 tra_label = decode_MNIST_label("train-labels.idx1-ubyte")#read data
-tra_label = tra_label[:30000]
-
+tra_label = tra_label[:20000]
+infinite_min = 10**(-323)
 K = int(max(tra_label) + 1)
 N = tra_label.size
-crop_Size = 20
-factor = 2
-temp_X = resize(crop(tra_data,crop_size = crop_Size),factor = 2)#tra_data = np.floor(tra_data / 128.)
+crop_Size = 18
+factor = 1
+temp_X = resize(crop(tra_data,crop_size = crop_Size),factor)#tra_data = np.floor(tra_data / 128.)
 #temp_X = crop(tra_data,crop_size = crop_Size) #tra_data = np.floor(tra_data / 128.)
 #show_image(tra_data[21,:,:])#temp_X
 #show_image(temp_X[21,:,:])#temp_X
 X = np.reshape(temp_X,(N,int(crop_Size*crop_Size/factor/factor)))#tra_data.max()
-'''
-a = np.array([[1,2,3],[5,4,5]])
-b = np.reshape(a,(1,6))
-b[0] = 255
-'''
-#X.shape
 #show_image(crop(tra_data,crop_size = crop_Size)[0,:,:])
 for i in range(X.shape[0]):
     for j in range(X.shape[1]):      
@@ -440,40 +491,23 @@ one_N = np.ones((N,1))
 
 PI = np.ones((K,1))/K
 U = np.random.rand(X.shape[1],int(K))/2+.25#0.25 - .75
-
 #nomalize uk
-
 for i in range(U.shape[1]):
     temp = sum(U[:,i])     
     for j in range(U.shape[0]):
         U[j,i] /= temp    #U[:,0]
-
 Z = np.zeros((N,K))
 Pnk = np.zeros((N,K))
 
 count = 1
 y_predict = np.zeros((N,))
 cost = [0,2]#initial ,for record the expectation function
-'''
 
-ss = 0
-for j in range(1000):
-    su = 0
-    for i in range(784):   
-        if X[j,i] > 0:
-            su += 1
-    if su > ss:
-        ss = su
-print(ss)
-'''
 record_correct = []
 #while(abs(cost[-1] - cost[-2]) > .001):    
-while(count< 200):
-    #=====
+while(cost[-1]-cost[-2] >.1 ):    
     #Pnk = np.exp((matrix_mul(X,np.log(U)) + matrix_mul(1 -X,np.log(1 - U))))# P(Xn|uk) 600  8sec.
-    time_s = time.time()
-    test = []
-    #s_t = 0
+    time_s = time.time()  
     for i in range(N):
         for j in range(K):
             temp = 1
@@ -481,56 +515,68 @@ while(count< 200):
                 if X[i,d] > 0:#X.max()
                     temp *= U[d,j]
                 else:
-                    temp *= 1-U[d,j]                
-     #       if temp == 0:
-      #          s_t += 1
+                    temp *= 1-U[d,j]                   
             Pnk[i,j] = temp    
-                #print(i,",",j)                
-            #    test.append(temp)
-    #print(s_t)
-    #=====
-    D = np.diag(PI[:,0])#for calculus P(xn|uk)*pi_k
+
+    D = diag(PI[:,0])#for calculus P(xn|uk)*pi_k
     expenPI = np.matmul(PI,One)#[PI PI PI PI...] for Z
     #updata    
-    #Z = np.matmul(Pnk,D)/(np.matmul(Pnk,expenPI))#+10**(-323))  
-    
+    Z = np.matmul(Pnk,D)/(np.matmul(Pnk,expenPI)+infinite_min)
+    PI = np.matmul(Z.transpose(),one_N)/N   
+    U = np.matmul(np.matmul(Xt,Z),diag(1/(N*PI[:,0])))  
+    #=====
+    '''
     for i in range(N):
         for j in range(K):
             #if (np.matmul(Pnk,PI)[j,0]+10**(-400)) ==0:
              #   print("(",i,",",j,")")
-            Z[i,j] = Pnk[i,j]*PI[j,0]/(np.matmul(Pnk,PI)[i,0])#+10**(-323))
-    
-
+            Z[i,j] = Pnk[i,j]*PI[j,0]/(np.matmul(Pnk,PI)[i,0]+10**(-323))
+    '''
     #====i=2,j=8
-    #PI = np.matmul(Z.transpose(),one_N)/N
-#    sum(PI2)    
-    
+      
+    '''
     temp = 0.
     for i in range(Z.shape[0]):#Z = [600*10]
         temp += Z.transpose()[:,i]
     PI = np.array([temp]).transpose()/N
-    
+    '''
     #====
-    U = np.matmul(np.matmul(Xt,Z),np.diag(1/(N*PI[:,0])))
-    #U = matrix_mul(matrix_mul(Xt,Z),diag(1/(N*PI[:,0]))) 
-   
-  #  expection = EM_cost(Z,PI,U)
-  #  print("[",count,"] expectation:",expection)
-    print("PI:",PI)
-    count += 1    
-   # cost.append(expection)    
+            
+    cost.append(EM_cost(Z,PI,U))    
     print("time:{:.3f}".format(time.time() - time_s))
-
+    total_cor = 0
     for i in range(N):
         y_predict[i] = Z[i].argmax()
-    total_cor = 0
+        if Z[i].max()>.99:
+            total_cor += 1
+            
+    confu_matrix = cluster(y_predict,tra_label)
+    print("[",count,"] confiden >.99的圖:",total_cor)
+    count += 1
+    
     for j in range(K):
-        total_cor += confuseMat_EM(y_predict,tra_label,j)
-    Acc = sum(y_predict==tra_label)/N    
-    print("[",count,"] acc:",Acc)
-    record_correct.append(Acc)
+        confuseMat_EM2(confu_matrix,j)
+    #confu_matrix[9]
+    
+    '''
+    temp = []
+    temp2 = []
+    for i in range(y_predict.size):
+        if y_predict[i] == 5 and tra_label[i]== 4:
+            temp.append(i)
+        elif y_predict[i] == 4 and tra_label[i]== 4:
+            temp2.append(i)
+    for i in range(10):
+        show_image(temp_X[temp[i],:,:])#temp_X
+    print("++++++++++++++++++++++++++++++++++++++")
+    for i in range(10):
+        show_image(temp_X[temp2[i],:,:])#temp_X
+        #show_image(np.floor(tra_data[temp2[i],:,:]+.5))#temp_X
+    '''
+    
 #==count # of each calss====================
-plt.plot(record_correct)
+
+#plt.plot(record_correct)
 '''
 cc = [0]*10    
 for i in tra_label:
