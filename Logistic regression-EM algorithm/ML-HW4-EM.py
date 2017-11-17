@@ -2,7 +2,7 @@
 """
 Created on Fri Nov 10 23:08:57 2017
 
-@author: 順益
+@author: Pan
 """
 import numpy as np
 import struct
@@ -471,11 +471,6 @@ temp_X = resize(crop(tra_data,crop_size = crop_Size),factor = 2)#tra_data = np.f
 #show_image(tra_data[21,:,:])#temp_X
 #show_image(temp_X[21,:,:])#temp_X
 X = np.reshape(temp_X,(N,int(crop_Size*crop_Size/factor/factor)))#tra_data.max()
-'''
-a = np.array([[1,2,3],[5,4,5]])
-b = np.reshape(a,(1,6))
-b[0] = 255
-'''
 #X.shape
 #show_image(crop(tra_data,crop_size = crop_Size)[0,:,:])
 for i in range(X.shape[0]):
@@ -501,22 +496,10 @@ Pnk = np.zeros((N,K))
 count = 1
 y_predict = np.zeros((N,))
 cost = [0,2]#initial ,for record the expectation function
-'''
 
-ss = 0
-for j in range(1000):
-    su = 0
-    for i in range(784):   
-        if X[j,i] > 0:
-            su += 1
-    if su > ss:
-        ss = su
-print(ss)
-'''
 record_correct = []
 #while(abs(cost[-1] - cost[-2]) > .001):    
-while(count< 50):
-    #=====
+while(count< 50):   
     #Pnk = np.exp((matrix_mul(X,np.log(U)) + matrix_mul(1 -X,np.log(1 - U))))# P(Xn|uk) 600  8sec.
     time_s = time.time()
     test = []
@@ -528,46 +511,27 @@ while(count< 50):
                 if X[i,d] > 0:#X.max()
                     temp *= U[d,j]
                 else:
-                    temp *= 1-U[d,j]                
-     #       if temp == 0:
-      #          s_t += 1
-            Pnk[i,j] = temp    
-                #print(i,",",j)                
-            #    test.append(temp)
-    #print(s_t)
+                    temp *= 1-U[d,j]                 
+            Pnk[i,j] = temp            
     #=====
     D = np.diag(PI[:,0])#for calculus P(xn|uk)*pi_k
     expenPI = np.matmul(PI,One)#[PI PI PI PI...] for Z
     #updata    
-    #Z = np.matmul(Pnk,D)/(np.matmul(Pnk,expenPI))#+10**(-323))  
-    
+    #Z = np.matmul(Pnk,D)/(np.matmul(Pnk,expenPI))#+10**(-323))      
     for i in range(N):
         for j in range(K):
             #if (np.matmul(Pnk,PI)[j,0]+10**(-400)) ==0:
              #   print("(",i,",",j,")")
             Z[i,j] = Pnk[i,j]*PI[j,0]/(np.matmul(Pnk,PI)[i,0])#+10**(-323))
-    
-
-    #====i=2,j=8
-    #PI = np.matmul(Z.transpose(),one_N)/N
-#    sum(PI2)    
-    
-    temp = 0.
-    for i in range(Z.shape[0]):#Z = [600*10]
-        temp += Z.transpose()[:,i]
-    PI = np.array([temp]).transpose()/N
-    
-    #====
-    U = np.matmul(np.matmul(Xt,Z),np.diag(1/(N*PI[:,0])))
-    #U = matrix_mul(matrix_mul(Xt,Z),diag(1/(N*PI[:,0]))) 
-   
+       
+    PI = np.matmul(Z.transpose(),one_N)/N
+    U = np.matmul(np.matmul(Xt,Z),np.diag(1/(N*PI[:,0])))  
   #  expection = EM_cost(Z,PI,U)
   #  print("[",count,"] expectation:",expection)
-    print("PI:",PI)
-    count += 1    
+    
    # cost.append(expection)    
     print("time:{:.3f}".format(time.time() - time_s))
-
+    count += 1  
     for i in range(N):
         y_predict[i] = Z[i].argmax()
     total_cor = 0
@@ -575,13 +539,4 @@ while(count< 50):
     for j in range(K):
        confuseMat_EM(y_predict,tra_label,j)
     '''
-    cluster(y_predict,tra_label)               
-    record_correct.append(Acc)
-#==count # of each calss====================
-
-plt.plot(record_correct)
-'''
-cc = [0]*10    
-for i in tra_label:
-    cc[int(i)] += 1
-'''
+    cluster(y_predict,tra_label)
