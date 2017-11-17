@@ -2,7 +2,7 @@
 """
 Created on Fri Nov 10 23:08:57 2017
 
-@author: 順益
+@author: Pan
 """
 import numpy as np
 import struct
