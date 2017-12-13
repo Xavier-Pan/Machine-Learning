@@ -22,13 +22,13 @@ def initial():
             plt.plot(np.random.rand(1),np.random.rand(1),'o',color = color[i])            
         ''' 
     
-def kernel(x,y,v = .5):    
+def kernel(x,y,v = 5):    
     z = x-y
-    return np.exp(-z.dot(z)/(2*v))    
+    return np.exp(-z.dot(z)/(2*v**2))    
     #return np.tanh(5*sum(x*y) +3)
 
 def load_data(fileName='test1_data.txt'):
-    path = r"C:\Users\順益\Desktop\106-ML\HW5"
+    path = r"C:\Users\pan\Desktop\106-ML\HW5"
     path += "\\"+fileName
     data = []
     with open(path,'r') as f:
@@ -54,7 +54,7 @@ def visualize(X,y,Mean,count,centroid=True):# at most 37 color y= np.zeros(len(a
         if centroid:
             plt.plot(Mean[k,0],Mean[k,1],'*',color = color[k],markersize = 7)     
     plt.draw()
-    plt.savefig(r"C:\Users\順益\Desktop\106-ML\HW5\img"+"\\"+str(count)+".jpg")
+    plt.savefig(r"C:\Users\pan\Desktop\106-ML\HW5\img"+"\\"+str(count)+".jpg")
     plt.show()    
     print('save image '+str(count))
 
