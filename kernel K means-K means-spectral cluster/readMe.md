@@ -12,3 +12,5 @@
 ‣ Submit a report with showing your code and give detailed explanations 
 
 ‣ (2 datasets with points on 2d space, the ground truth cluster assignments will also be provided)
+  dataset:
+  https://drive.google.com/open?id=1uzMbjb1JeNVdemTYT-_asg-brUYZlD7U
