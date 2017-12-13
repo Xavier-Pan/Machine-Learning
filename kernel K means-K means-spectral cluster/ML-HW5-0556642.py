@@ -21,14 +21,16 @@ def initial():
         for i in range(2):
             plt.plot(np.random.rand(1),np.random.rand(1),'o',color = color[i])            
         ''' 
+    color.remove(color[5])
+    color.remove(color[2])
     
-def kernel(x,y,v = 5):    
+def kernel(x,y,v=6):
     z = x-y
-    return np.exp(-z.dot(z)/(2*v**2))    
+    return np.exp(-z.dot(z)/(2*v**2))
     #return np.tanh(5*sum(x*y) +3)
 
 def load_data(fileName='test1_data.txt'):
-    path = r"C:\Users\pan\Desktop\106-ML\HW5"
+    path = r"C:\Users\pan\ML"
     path += "\\"+fileName
     data = []
     with open(path,'r') as f:
@@ -54,13 +56,13 @@ def visualize(X,y,Mean,count,centroid=True):# at most 37 color y= np.zeros(len(a
         if centroid:
             plt.plot(Mean[k,0],Mean[k,1],'*',color = color[k],markersize = 7)     
     plt.draw()
-    plt.savefig(r"C:\Users\pan\Desktop\106-ML\HW5\img"+"\\"+str(count)+".jpg")
+    plt.savefig(r"C:\Users\pan\ML\img"+"\\"+str(count)+".jpg")
     plt.show()    
     print('save image '+str(count))
 
 def k_means(X,count,k=2):#  X = np.random.rand(3,2)
     N = X.shape[0]
-    Mean = np.random.rand(k,2)#N,k = 10,3
+    Mean = np.random.rand(k,X.shape[1])#N,k = 10,3
     selectedPoint = np.random.choice(N, size=k, replace=False)
     for i in range(k):
         Mean[i,:] = X[selectedPoint[i],:]
@@ -105,7 +107,7 @@ def k_means(X,count,k=2):#  X = np.random.rand(3,2)
 def kernel_Kmeans(X,count,y,k=2,plot = True):#  X = np.random.rand(3,2)
     N = X.shape[0]
     Mean = np.zeros((k,2))#N,k = 10,3
-  #  y = np.random.randint(k,size= N)    
+    #y = np.random.randint(k,size= N)    
     new_y = np.random.randint(k,size= N)    
     Ck = [0]*k  
     flat = 1
@@ -115,7 +117,9 @@ def kernel_Kmeans(X,count,y,k=2,plot = True):#  X = np.random.rand(3,2)
         count+= 1#count for save image
         #===evaluate cluster size                   
         for i in range(k):    
-            Ck[i] = int(sum(y==i))#calculus size of cluster         
+            Ck[i] = int(sum(y==i))#calculus size of cluster      
+        if Ck[i] == 0:
+            print("Ck[",str(i),"]")
         #===calculus term3
         term3 = [0]*k#k=2        
         for  j in range(k):
@@ -175,9 +179,12 @@ def spectral(X,y,k):
     eigvals, eigvecs = linalg.eigh(L, I)
     
     U = eigvecs[:,:k]
+    if k>2:
+        U = eigvecs[:,1:k+1]
+        
     print(U.shape)
     #y= kernel_Kmeans(U,count,k=2,plot = False)
-    y= k_means(U,count,2)
+    y= k_means(U,count,k)   
     visualize(X,y,np.zeros((len(y),2)),0,False)
     return U
 #============================
@@ -189,18 +196,44 @@ color = []# for plot
 initial()
 
 file_label = 'test2_ground.txt'
-file = 'test2_data.txt'
+file = 'test1_data.txt'
 data = load_data(fileName = file)
+num_cluster = 4
+data_dim = 2
 #== load true label
 label = open(file_label,'r').readlines()
 label = np.array([int(item.strip('\n')) for item in label])
+label = np.random.randint(num_cluster,size = len(label))
 #==  
-visualize(data,np.ones(data.shape[0])  ,np.zeros((data.shape[0],2)),0,False)
+visualize(data,np.ones(data.shape[0])  ,np.zeros((data.shape[0],data_dim)),0,False)
 count = 0
-#y = k_means(data,count,2)
-y = kernel_Kmeans(data,count,label)
+#y = k_means(data,count,num_cluster)
+#y = kernel_Kmeans(data,count,label,k=num_cluster)
 #visualize(data,y,np.zeros((len(y),2)),0,False)
-#U = spectral(data,y,2)#X =data
+U = spectral(data,y,k = 4)#X =data
+U[:,1]
 
 
+import imageio
+import PIL
+from PIL import Image
+def make_gif(filenames, output_file, speed):
+    images = []
+    for filename in filenames:
+        images.append(imageio.imread(filename))
+    imageio.mimsave(output_file, images, duration=speed)
+filenames = [r"C:\Users\pan\ML\img"+"\\"+ name for name in os.listdir(r'C:\Users\pan\ML\img')  if name.find('.jpg')!= -1]
+#filenames = [i for i in os.listdir(r'C:\Users\pan\ML\img') ]
+#make_gif(filenames, output_file='mygif', speed = .2)
 
+if 0:
+    from images2gif import writeGif
+    from PIL import Image
+    import os
+    images = [Image.open(fn) for fn in filenames]
+    size = (600,350)
+    for im in images:
+        im.thumbnail(size, Image.ANTIALIAS)
+    
+    filename = "doge.gif"
+    writeGif(filename, images, duration=0.5, subRectangles=False)
